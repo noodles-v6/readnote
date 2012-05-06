@@ -49,5 +49,48 @@
 
 	my $next_line = <STDIN>; # 完蛋了，没其他内容了！
 
-为什么呢？因为foreach的列表环境，它一次性把所有内容都从STDIN中读出来了，STDID里已经什么都没有了。
+为什么呢？因为foreach的列表环境，它一次性把所有内容都从STDIN中读出来了，STDIN里已经什么都没有了。
+一般，while这样边读边处理的方式比较合适。
+
+=head2 赋值操作决定的上下文
+
+如果左值是一个列表，那么Perl认为右值是一个列表。
+
+	my ($n) 	= ( 'a', 'b', 'c' ); 	# $n为'a'
+	my ($n, $m) = ( 'a', 'b', 'c' ); 	# $n为'a', $m为'b'
+	my @arr 	= ( 'a', 'b', 'c' ); 
+	my @lines   = <STDIN>; 				# 读入所有行
+
+上面的()和@告诉了Perl，=号的右边应该是列表。看下面这个：
+
+	my $line = <STDIN>; 	# 只读取一行
+
+即：如果上文告诉Perl当前处于列表上下文，那么Perl就把右值解释为列表。
+Q: 如果右值不能解释为列表，则会怎么样？
+
+=head2 空上下文结果
+
+某些情况下，Perl会告诉我们 空上下文结果 操作毫无意义。比如打开warnings开关时，Perl会报：
+Useless use of a variable in void context
+
+如：
+
+	some_sub(@args);
+	grep { /foo/ } @array;
+	1 + 2;
+	# 上面的计算结果，压根就没有被使用
+
+=head2 要点
+
+=over 4
+
+=item * Perl会根据你的操作自动判断当前的上下文环境。
+
+=item * Perl会根据数字或字符串上下文来对标量作相应解释。
+
+=item * 在列表上下文或标量上下文中的计算结果可能完全不同。
+
+=back
+
+
 
