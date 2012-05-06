@@ -1,0 +1,48 @@
+=encoding utf8
+
+=head1 地道地使用Perl 
+
+Idiomatic Perl
+
+Perl is an expressive language, and often a succinct one. Larry Wall designed the language to allow
+frequently used constructs to be coded very compactly. Sometimes Perl programmers will talk about
+Perl's B<Huffman coding:> the most-frequent constructs take the fewest key-strokes. Perl's very high
+level features like <>, regular expressions, and grep are particularly potent. For example:
+
+	# swap $a and $b
+	($a,$b) = ($b,$a);
+
+	# read lines from files or standard input
+	# and print them out in sorted order
+	print sort <>;
+
+	# print all the lines containing the word joebloe
+	print grep /\bjoeloe\b/, <>;
+
+	# copy all the numbers in @n evenly
+	# divisible by 5 into @div5
+	my @div5 = grep { not $_ % 5 } @n;
+
+	# one way of turning "123.234.0.1"
+	# into the integer 0xb7ae0010
+	$bin_addr = pack 'C4', split /\./, $str_addr;
+
+但是每个Perl程序员都应该掌握基础习语，同时也该对更高级的习语有所了解。因为有些可能很cool，但是你确定别人能看懂吗？你确定性能没问题么？下面的例子：
+
+	foreach my $key ( sort keys %h ) {
+		print "$key: $h{$key}\n";
+	}
+
+	# or
+	print map "$_: $h{$_}\n", sort keys %h;
+
+Perl代码反应了作者的品性。只要你喜欢，平铺直叙地写代码也毫无问题。编程就像盖房子，是一门B<堆砌>的艺术。虽然简单，但只要能顺利运行，那就很好。只不过循规蹈矩出来的作品，大抵不会有什么特色。
+
+On the other hand, you may want to try using all the nifty features that Perl gives you. Continuing
+the house analopy, B<you may be the kind of builder who spends more time at Home Depot looking at
+power tools than using the latest technology>. B<This is fine, so long as you realize that sometimes a
+hammmer is all you need>.
+
+翻译：就好像成天蹲在工具房浪费时间琢磨该用哪种新式工具。
+
+Or maybe after a while you will wind up somewhere in-between.
