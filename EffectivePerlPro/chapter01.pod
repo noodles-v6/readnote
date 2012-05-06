@@ -1,5 +1,6 @@
 =encoding utf8 
 =head1 理解上下文及其对操作的影响
+
 =over
 =item 数字和字符串上下文
 
@@ -10,6 +11,9 @@
 	print "12 is less than 2!\n" if '12' lt '2'; # lt为字符串比较符
 	print "Oh noes! foo is bar!\n" if 'foo' == 'bar'; # ==为数值比较符，foo和bar转换为数值为0
 
+=back
+
+=over
 =item 标量和列表上下文
 
 当操作需要的是单个对象时，Perl会使用标量上下文。期望多个对象时，使用列表上下文。
