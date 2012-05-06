@@ -1,3 +1,4 @@
+=encoding utf-8 
 =pod
 =head1 Perl基础
 =head2 理解上下文及其对操作的影响
@@ -39,5 +40,4 @@
 为什么呢？因为foreach的列表环境，它一次性把所有内容都从STDIN中读出来了，STDID里已经什么都没有了。
 
 
-=encoding utf-8 
 =cut
