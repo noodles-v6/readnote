@@ -1,3 +1,6 @@
+=encoding utf-8 
+=cut
+
 =head1 Perl基础
 =head2 理解上下文及其对操作的影响
 1. 数字和字符串上下文
