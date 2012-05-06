@@ -1,5 +1,6 @@
-=encoding utf-8 
+=encoding utf8 
 =head1 理解上下文及其对操作的影响
+=over
 =item 数字和字符串上下文
 
 在Perl中如何处理数据，如何求表示式的值，取决于上下文 -- 不同操作符下上下文不同。
@@ -40,4 +41,4 @@
 	my $next_line = <STDIN>; # 完蛋了，没其他内容了！
 为什么呢？因为foreach的列表环境，它一次性把所有内容都从STDIN中读出来了，STDID里已经什么都没有了。
 
-
+=back
