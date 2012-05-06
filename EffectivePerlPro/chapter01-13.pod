@@ -75,7 +75,9 @@ But you do it without constructing named hashes:
 =over 4
 
 =item * 避免用一组名字相近的标量变量保存分组数据。
+
 =item * 用集合型的数据类型保存分组数据。
+
 =item * 用hash表示一个实体对象，利用键值对表示数据属性。
 
 =back
