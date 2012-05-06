@@ -1,0 +1,81 @@
+=encoding utf8
+
+=head1 用数组或哈希组合数据
+
+Use arrays or hashes to group data
+
+=head2 像这样用数组
+
+The easy way is to store the values in an array directly:
+	
+	my @x = ( 1, 1, 2, 3, 5);
+	my @x = qw( 1 1 2 3 5 ); # even easier, no coding ','
+
+多维数组存储，这里有个元组的概念 -- Tuple。
+如，描述坐标轴上的点：you must store them as tuples, where each point gets its own array reference:
+
+	my @points = ( [ 1, 1 ], [ 2, 4] );
+
+It's then easy to go through all of your points:
+
+	foreach my $point (@points) {
+		print "x: $point->[0] y: $point->[1]\n";
+	}
+
+注意：$point取出来的是一个元组，访问元组中的数据用->[index],试试下面的语句：
+
+	foreach my $point (@points) {
+		print "x: $point[0] y: $point[1]\n";
+		# 要这样用哦，亲！
+		# print "x: @$point[0] y: $point[1]\n";
+	}
+
+因为$point是一个引用，要想使用取值，要么告诉[] $point是一个数组，要么用->。OMG原来和C是一样的。
+
+=head2 避免使用大量的变量
+
+The data for a person:
+	
+	my $person_name = 'George';
+	my $person_id   = '3';
+	my $person_age  = 29;
+
+and pass them into a sub in the correct order:
+
+	some_sub( $person_name, $person_id, $person_age );
+
+When you see this sort of pattern, convert it to a hash. The part of the variable name after person
+becomes the hash key:
+
+	my %person = (
+		id   => 3,
+		name => 'George',
+		age  => 29,
+	);
+
+Now you don't have to worry about how you pass around everything you know about George, since you
+can always just pass a reference to the hash:
+
+	some_sub( \%person );
+
+If you have a list of persons, you can collect them in an array:
+	
+	my @persons = ( \%person1, \%person2 );
+
+But you do it without constructing named hashes:
+
+	my @persons = ( 
+		{ id => 1, ... },
+		{ id => 2, ... },
+		...
+	);
+
+=head2 要点 -- Things to remember
+
+=over 4
+
+=item * 避免用一组名字相近的标量变量保存分组数据。
+=item * 用集合型的数据类型保存分组数据。
+=item * 用hash表示一个实体对象，利用键值对表示数据属性。
+
+=back
