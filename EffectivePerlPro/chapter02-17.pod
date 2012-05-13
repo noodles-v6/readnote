@@ -34,4 +34,117 @@ Perl极富表达力，不过有时多变的语法并不能完美兼顾。所以�
 	my $list_ref = \( split /\++/, $str ); # error
 	my $list_ref = [ split /\++/, $str ];  # ok
 
+=head2 用=>构造键值对
+
+'=>'和','差不多，唯一的差别在于：如果=>左边的标识符能识别为一个单词，那么Perl就会自动将它当成一个字符串，而不是一个函数调用。如：
+
+	my @a = ( time => 'files' ); # 这里的time只是一个单词
+	print "@a\n"; # 打印 time files
+
+	my @a = ( time, 'files' ); # 这里time是内建函数
+	print "@b\n"; # 打印 862891055 files
+
+下面都是可行的美观表示(hash就是个数组)：
+
+	my %elements = (
+		'Ag' => 47,
+		'Au' => 79,
+		'Pt' => 78,
+	);
+
+	my %elements = (
+		Ag => 47,
+		Au => 79,
+		Pt => 78,
+	);
+
+	my %elements = qw (
+		Ag 47
+		Au 79
+		Pt 78
+	);
+
+=head2 用=>来模拟命名参数
+
+	sub img {
+		my %params = ( align => 'middle', @_ ); # 预先设置align的默认值
+
+		# 把hash的键值输出HTML标签的格式
+		print "<img "，
+			(
+			join ' ', map { "$_=\"$params{$_}\"" }
+				keys %params
+			),
+			">";
+	}
+
+在调用img子程序时，可以用自己的键值对作为参数：
+
+	img( src => 'icon.gif', align => 'top' );
+
+这里设置的align => 'top' 覆盖了%params里的默认取值，所以最终你会得到正确的img标签：
+
+	<img src="icon.gif" align="top" />
+
+请不要在实际应用中照搬上面的做法，这里只是演示概念。处理HTML文件应该使用专门的HTML模板。
+
+=head2 用=>指明操作方向
+
+一个有趣的“语法糖”，比如在rename函数中，用它来表示从旧文件名改为新文件名：
+
+	rename "$file.c" => "$file.c.bak";
+
+=head2 小小使用{}
+
+** TODO **
+
+=head2 用@{[ ]}或eval { }的形式来复制列表
+
+<B
+有时候我们希望操作的是某个列表的副本，以免破坏原始数据>。比如查找缺少的.h头文件，可以先读取所有的.c文件，然后将文件名换成.h结尾，再按此列表核对哪些文件不存在：
+
+	my @cfiles_cp = @cfiles;
+	my @missing_h =
+		grep { s/\.c$/\.h/ and not -e } @cfiles_cp;
+
+下面的方式等效：
+
+	my @missing_h = 
+		grep { s/\.c$/\.h/ and not -e } @{ [@cfiles] }
+
+	my @missing_h = 
+		grep { s/\.c$/\.h/ and not -e } eval { @cfiles };
+
+遇到副本场景，用eval较高效。
+
+当然，你完全可以像下面这样做：
+
+	my @missing_h = grep {
+		my $h = $_;
+		$h =~ s/\.c$/\.h/ and !( -e $h )
+	} @cfiles;
+
+注意：
+
+以上手法创建的都是“影子副本”即完整独立的副本。如果原始列表中的元素是引用的话，复制的结果就会和原始数据共享。如果确实需要一份完全独立的深层副本，请使用Storable模块的dclone函数：
+
+	use Storable qw(dclone);
+
+	my $cp_ref = dclone( \@array );
+
+现在的$cp_ref就和原来的@array完全不相干了。
+
+究竟使用哪种技术，取决于实际要解决的问题。但不管怎样，对列表的复制往往会给人造成困扰，使用的时候要注意区分。
+
+=head2 要点
+
+=over 4
+
+=item * Perl语法渊博广博，因此颇多双关。
+
+=item * 用=>能更好地展示数据间的关系。
+
+=item * 使用dclone对数组进行深层次地复制。
+
+=back
 
