@@ -1,0 +1,64 @@
+=encoding utf8
+
+=cut
+
+=head1 善用foreach, map和grep
+
+这三种方式有相似之处，不过各自的应用场合不同。如果要较真，任何一种形式的循环都可以用其他形式等价表示，但不合适宜的使用往往会使人困惑，困惑的不仅是那些将来会阅读你代码的人，还有你自己。所以，知才善用，才是最恰当的做法。
+
+=head2 用foreach来只读遍历列表元素
+
+	foreach my $cost (@cost) {
+		$total += $cost;
+	}
+
+	foreach my $file ( glob '*' ) {
+		print "$file\n" if -T $file;
+	}
+
+当然你可以好好利用$_。
+
+=head2 用map从已知列表推到出新列表
+
+	my @sizes = map { -s } @files;
+	my @sizes = map -s, @files;
+
+map接受列表上下文参数，参数一是用于数据转换操作的表达式或代码块，参数二是待遍历数组或列表。
+
+	my @stem = map { /(.*)\.txt$/ } @files; # 返回.txt的文件名们
+	my ($from) = map /^From:\s+(.*)$/, @msg_lines; # 从邮件头中找出From开头的行，并取出email地址。
+
+出于性能考虑，一般我们会直接对默认的$_变量操作。它其实相当于当前列表元素的别名，所以一旦在map表达式中修改了$_的内容，原始数据也会改变。是不是很不好呢，那么，如果你想改原始数据，用foreach。
+
+但也许你可以这样哦：
+
+	my @digitless = map {
+		( my $x = $_ ) =~ tr/0-9//d;
+		$x
+	} @elems;
+
+=head2 用grep筛选列表元素
+
+grep比较特别，一般用于筛选列表元素或对元素计数。但有时会被滥用，那些觉得foreach不如grep酷的coder，喜欢什么循环有用grep实现，虽然说没什么不可以，不过作为头脑清醒的开发人员，以最简单直接的方式使用grep才是王道。
+
+	print grep /joseph/i, @lines;
+
+在标量上下文中，grep返回符合条件的元素个数，而不是列表：
+	
+	my $has_false = grep !$_, @array;
+	my $has_undef = grep !defined($_), @array;
+
+=head2 要点
+
+=over 4
+
+=item * 在需要从已知列表推演出一个新的列表时，使用map；
+
+=item * 在筛选列表时，使用grep；
+
+=item * 如果在遍历时需要修改元素，使用foreach；
+
+=back
+
+
+
