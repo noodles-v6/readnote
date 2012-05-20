@@ -1,4 +1,4 @@
-=ecoding utf8
+=encoding utf8
 =cut
 
 =head1 掌握多种排序方式
