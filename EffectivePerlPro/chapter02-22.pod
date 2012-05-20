@@ -1,0 +1,183 @@
+=ecoding utf8
+=cut
+
+=head1 掌握多种排序方式
+
+简单的sort操作符就能对列表进行排序，返回排序后的新列表：
+
+	my @elements = sort qw (
+		hydrogen
+		helium
+		lithium
+	);
+
+默认按UTF-8排序，也就是说，排序时依照UTF-8设定的各字节的码值（编码后的字节数值），按顺序依次比较。如果君指定使用use
+locale或use bytes，Perl就不使用UTF-8做排序了。
+
+因此在对数字或大小写混杂的字符串排序时，会看到意外结果，如:
+
+	print join ' ', sort 1 .. 10; # 1 10 2 3 4 5 6 7 8 9
+	print join ' ', sort qw( my Dog has Fleas ); # Dog Fleaas has my
+
+如果君不想默认UTF-8，那自己写sort程序把。
+
+=head2 sort子程序
+
+和一般的子程序不同，sort得到的参数是经过硬编码的两个特殊包变量$a和$b，而非@_。$a和$b在sort内部是本地化的，这就好比是在sort内部开头的地方，总有一句无形的local($a,$b)一样，只不过我们不用再自己写了。
+
+$a和$b能得到use strict vars的特殊照顾。它们属于当前包，而不像特殊变量那样只属于main包。
+
+Perl内建的排序方式相当于用cmp操作符比较：
+
+	sub utf8ly { $a cmp $b }
+	my @list = sort utf8ly @list;
+
+而更恰当的方式，是在sort后面使用代码块。直接将原来子程序中的内容移过来就好了：
+	
+	my @list = sort { $a cmp $b }  (16, 1, 4, 23, 54, 2, 3, 1);
+
+$a和$b的比较方法决定了最终得到的排序顺序。比如把cmp操作符换成<=>，就变成了按数字大小排序：
+
+	my @list = sort ( $a <=> $b ) (16, 1, 4, 23, 54, 2, 3, 1);
+
+大小写无关排序：
+
+	my @list = sort { lc($a) cmp lc($b) } qw(This is a test);
+
+君如果想倒序排？兑换$a和$b位置就性：
+
+	my @list = sort { $b cmp $a } @list;
+
+当然也可以根据$a和$b的值计算后再做比较，比如接下来的这条代码是按文件最后修改时间排序：
+
+	my @list = sort { -M $a <=> -M $b } @files;
+
+我们时常需要根据排序hash，如根据value值大小排序key：
+
+	my %elems = ( 
+		b 	=> 5,
+		be 	=> 4,
+		h 	=> 1,
+		he 	=> 2,
+		Li 	=> 3
+	);
+	sort { $elems{$a} <=> $elems{$b} } keys %elems;
+
+甚至还可以按照多个键仙湖顺序。奇迹的or操作符。下面代码：
+
+	my @first = qw(John Jane Bill Sue Carol);
+	my @last  = qw(Smith Smith Jones Jones Smith);
+
+	my @indexs = sort {
+		$last[$a] cmp $last[$b] # 先按姓排，然后
+			or
+		$first[$a] cmp $first[$b] # 再按名排
+	} 0 .. $#first;
+
+	for (@indexs) {
+		print "$last[$_], $fisrt[$_]\n";
+	}
+
+思路：产生满足排序规则的数组下标，然后按下标取数，在考虑编写sort的时候我们只需要关心何时返回-1，0，1
+就行了。
+
+注意：or操作符计算时，先计算左值，若结果真，则结束计算，否则计算右值。
+
+=head2 高级排序 -- 一般做法
+
+有时在比较两个值的时候需要进行大量的计算，比如按照密码文件的第三个字段（uid）来排序：
+
+	open my ($passwd), '<', '/etc/passwd' or die;
+	my @by_uid = 
+		sort { ( split /:/, $a )[2] <=> ( split /:/, $b )[2] }
+		<$passwd>;
+
+分析：上面的代码没有问题，能干事，但每次比较都要执行两个复杂的split计算，而拆分方式又毫无分别，显然可以优化下。
+
+对于每个要比较的元素，sort都会运行一次或多次子程序。假设需要排序的元素个数为n，那么排序时子程序的调用次数就是n*log(n)。所以为了提升排序的整体效率，就要想办法提高每次比较的速度。如果比较之前需要进行复杂计算，应该考虑使用缓存机制，在比较前就先计算好要比较的数据，比较时直接使用缓存，以提高排序速度。
+
+上面的例子，在做具体比较前先创建一个散列表，以原始数据行作为关键字，而以拆分出来的用户标识号uid作为值，然后对散列排序：
+
+	open my ($passwd), '<', '/etc/passwd' or die;
+	my @passwd = <$passwd>;
+
+	# 整行作为一个key，而value为uid
+	my %lines = map { $_, ( split /:/ )[2] } @passwd;
+
+	my @lines_sorted_by_uid = 
+		sort { $lines{$a} <=> $lines{$b} } keys %lines;
+
+=head2 高级排序 -- 更酷哦
+
+不管是经过深思熟虑，还是灵光乍现，Perl程序员在持续的实践中逐渐积累起了一套实现复杂排序变形的习惯用法。
+
+上面实现方式的主要缺点在于：它需要额外准备一条语句，建立辅助排序的数组或散列。我们有一个回避这种用法的技巧
+-- Orcish Maneuver （或者 || cache），它充分利用了不为人熟悉的||=操作符的特性。
+
+前面的按修改日期排序文件的例子：
+
+=over 4
+
+=item * 使用Orcish Maneuver技巧排序
+
+=back
+
+	my @sorted = sort { ( $m{$a} ||= -M $a ) <=> ($m{$b} ||= -M $b) } #
+	之前的实现重复计算-M，所以性能不佳。
+	@files;
+	
+解释||=：$m{$a} ||= -M $a 是简写，等同于 $m{$a} = $m{a} || -M $a，刚开始$m{a} ==
+undef，好了，君理解了吧？！！这就是所谓的cache。
+
+为了确保$m初始化为空，做下面的事情：
+
+	{ 
+		my %m;
+		@sorted = sort ...
+	}
+
+=over 4
+
+=item * 施瓦茨变换
+
+=back
+
+目前为止最精简的全能排序技术还得算 -- Schewartzian
+Transform。简而言之，施瓦茨变换就是接续若干map实现的sort排序。
+
+省去原文中那些操蛋的赘语，直接看代码，还是那个文件排序例子：
+
+	my @sorted_names = 
+		map { $_->[0] }  	# 4. 提取原始文件名
+		sort { $a->[1]      
+			   <=>
+			   $b->[1] }    # 3. 对[name,key]二元组排序
+		map { [ $_, -M ] }  # 2. 穿创建[name, key]二元组
+		@files; 			# 1. 原始数据
+
+再看看那个密码文件的例子吧：
+
+	open my ($passwd), '<', '/etc/passwd' or die;
+	my @by_uid = 
+		map  { $_->[0] }
+		sort { $a->[1] <=> $b->[1] }
+		map  { [ $_, ( split /:/ )[2] } <$passwd>;
+
+借助施瓦兹变换直接从文件句柄读取数据，不但可以省去对缓存数据的临时变量%key的使用，还可以省去@passwd数组。
+
+=head2 要点
+
+=over 4
+
+=item * Perl默认UTF-8排序规则
+
+=back
+
+=item * 可以让sort使用自定义的排序子程序
+
+=back
+
+=item * 为了提高运算复杂的排序程序的性能，可以采用先缓存后排序的方式。
+
+=back
+
