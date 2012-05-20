@@ -171,11 +171,7 @@ Transform。简而言之，施瓦茨变换就是接续若干map实现的sort排�
 
 =item * Perl默认UTF-8排序规则
 
-=back
-
 =item * 可以让sort使用自定义的排序子程序
-
-=back
 
 =item * 为了提高运算复杂的排序程序的性能，可以采用先缓存后排序的方式。
 
