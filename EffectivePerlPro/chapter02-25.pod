@@ -7,52 +7,52 @@
 do {}
 能完成一个代码块的效果，好像一个inline子程序。比如下面的例子，在读取文件内容之前先本地化数据分隔符：
 
-	my $file = do { 
-		local $/;
-		open my ($fh), '<', $filename or die;
-		<$fh>;
-	};
+    my $file = do { 
+        local $/;
+        open my ($fh), '<', $filename or die;
+        <$fh>;
+    };
 
 当然，由于do的作用，my和local的作用域只在do块内~~~，至于不用do的写法，没必要讲了。再看下面例子，你喜欢吗？
 
-	do { ...; ...; } if /$regex/;
+    do { ...; ...; } if /$regex/;
 
 反正我喜欢，因为哥哥再也不用敲括号了 -- if(...)，括号真心很丑 !!! 继续看例子：
 
-	my ( $thousands_sep, $decimal_seq );
-	if ( $locale eq 'European' ) {
-		( $thousands_sep, $decimal_seq ) = qw( . , );
-	}
-	elseif ( $locale eq 'English' ) {
-		( $thousands_sep, $decimal_seq ) = qw( , . );
-	}
+    my ( $thousands_sep, $decimal_seq );
+    if ( $locale eq 'European' ) {
+        ( $thousands_sep, $decimal_seq ) = qw( . , );
+    }
+    elseif ( $locale eq 'English' ) {
+        ( $thousands_sep, $decimal_seq ) = qw( , . );
+    }
 
 看到这坨代码是不是恶心的劲就上来了，是的，很笨拙，做个改造：
 
-	my ( $thousands_sep, $decimal_seq ) = do {
-		if      ( $locale eq 'European' )  { qw( . , ) }
-		elseif  ( $locale eq 'English'  )  { qw( , . ) }
-	);
+    my ( $thousands_sep, $decimal_seq ) = do {
+        if      ( $locale eq 'European' )  { qw( . , ) }
+        elseif  ( $locale eq 'English'  )  { qw( , . ) }
+    );
 
 当然，如果使用given-when结构会更好看点（也不一定）！
 
 有时候我们也会借助do来弱化错误处理的代码。比如打开一组文件，但不希望在某次打开失败时就立即终止，我们可以在or后面接个do做发出警告，并指明继续运行：
 
-	foreach my $file (@files) {
-		open my ($fh), '<', $file or do { warn "...."; next; }
-		...
-	}
+    foreach my $file (@files) {
+        open my ($fh), '<', $file or do { warn "...."; next; }
+        ...
+    }
 
 特别指出：do语句是好东西，但是不应该一味地用，特别是逻辑很长时，这时应该果断地用sub搞。记住：用do后语义清晰，场面好看了，那就用对了
 !!!
 
 一个少见的用途：
 
-	my $typed;
-	do {
-		print "Type 'hello': ";
-		chomp( $typed = <STDIN> );
-	} while ( $typed ne 'hello' );
+    my $typed;
+    do {
+        print "Type 'hello': ";
+        chomp( $typed = <STDIN> );
+    } while ( $typed ne 'hello' );
 
 =head2 要点
 
