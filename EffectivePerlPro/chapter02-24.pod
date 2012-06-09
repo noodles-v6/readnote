@@ -1,0 +1,116 @@
+=encoding utf8
+
+=head1 用given-when构造switch语句
+
+大概从Perl出生的那天起，Perl程序员就没停止过抱怨：其他都有了，为什么C语言里的switch语法不引进？Perl
+5.10终于引进了，并且还被改造得cool比寻常。
+
+=head2 更少的输入
+
+他的名字 —— given-when，给人if-else的感觉：
+
+	my $dog = 'Spot';
+	if 	   ( $dog eq 'Fido' ) { ... }
+	elseif ( $dog eq 'Rover') { ... }
+	else                      { ... }
+
+改写：
+
+	use 5.010;
+
+	given ($dog) {
+		when ('Fido')  { ... }
+		when ('Rover‘) { ... }
+		defaut         { ... };
+	};
+
+其中有些$_处理，我们自然不用说了。
+
+=head2 智能匹配
+
+在given-when中，Perl默认使用智能匹配，上面的例子其实做了下面的事：
+
+	when ( $dog ~~ 'Fido' ) { ... }
+
+当然，你可以指定：
+
+	when ( $dog eq 'Fido' ) { ... }
+
+显然，要用好given-when，清楚了解智能匹配的行为很重要。为什么要这样说呢？因为你可能会在不同数据类型间做匹配：
+
+	$dog ~~ /$regex/ 		# $dog 能被正则匹配
+	$dog ~~ %Dogs           # $dog 是 %Dogs 中的key
+	$dog ~~ @Dogs           # $dog 是 @Dogs 中的元素
+	@Dogs ~~ /$regex/       # @Dogs中至少有一个元素能与正则匹配
+	%Dogs ~~ /$regex/       # %Dogs中至少有一个key能与正则匹配
+
+上面是比较有趣的几个，具体的请看perlsyn文档。
+
+话说，为什么~~这么智能，无非就是把很多功能集合于一身而已，这就严重影响性能了，因为编译器要花费资源去判断上下文，但这不正是Perl的思想
+-- 能简单事绝不做复杂 !!!
+
+=head2 多分支处理
+
+不管其他语言肿么样，反正她break了：
+
+	when ( $_ ~~ 'Fido' ) { ... } 等效于 when ( $_ ~~ 'Fido' ) { ...; break; }
+
+想不break肿么办？continue就是。一般继续的少，退出的多，所以Perl颠倒C语言switch的语法是明智之举。
+
+=head2 代码组合
+
+大话if-elseif-else结构的缺陷，你能这样吗？
+
+	if (a==b) { ... }
+	say 'im a gay!';
+	elsif (a>b) { ... }
+	say 'im a man!';
+	else { ... }
+
+现在你可以这样了：
+
+	use 5.010;
+
+	my $dog = 'Spot';
+
+	given ($dog) {
+		say "I m working with [$_]";
+		when (/o/) { say 'The name has an "o"'; continue; }
+
+		say "continuing to look for a t";
+		when (/t/) { say 'The name has a "t"'; continue; }
+
+		$_ =~ tr/p/d;
+		when (/d/) { say 'The name has a "d"'; continue; }
+	};
+
+说句心里话，这种表达实在太棒了:)
+
+=head2 对列表进行分支判断
+
+在foreach循环中，我们也能够使用when，跟given相识，执行时它会依次读取列表元素：
+
+	use 5.010;
+
+	my $count = 0;
+	foreach (@array) {
+		when ( /[aeiou]$/)  { $vowels_count ++ }
+		when ( /[^aeiou]$/) { $count ++ }
+	}
+
+	say "\@array contains $count words ending in consontants and $vowels_count words ending in
+	vowels";
+
+=head2 要点
+
+=over 4
+
+=item * 如果要写分支语句，用given-when结构；
+
+=item * when语句中的智能匹配操作，默认用的是$_变量；
+
+=item * 除了given外，其他循环结构中也能使用when语句。
+
+=back
+
+
