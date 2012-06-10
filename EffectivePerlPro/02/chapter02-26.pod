@@ -1,0 +1,136 @@
+=encoding utf8
+
+=head1 用List::Util和List::MoreUtils简化列表处理 
+
+要深入理解Perl，熟悉列表操作很重要。在Higher Order Perl书中，Mark Jason
+Dominus就曾说过，Perl其实更接近Lisp语言。
+
+标题中两个模块是用C实现的，他们提供的函数比直接用Perl实现的自然快了不少。
+
+=head2 快速查找最大值
+
+不知道的程序猿们，这样搞：
+
+    my @nums = 0 .. 1000;
+    my $max  = $nums[0];
+    foreach (@nums) {
+        $max = $_ if $_ > $max;
+    }
+
+知道的这样搞：
+
+    use List::Util qw(max);
+    
+    my $max_num = max( 0 .. 1000 );
+
+知道的他们还这样搞：
+
+    use List::Util qw(maxstr);
+
+    my $max_str = maxstr ( qw( Fido Spot Rover ) );
+
+字符串比较玩弄于掌中。还有sum：
+
+    use List::Util qw(sum);
+    
+    my $sum = sum ( 1 .. 1000 );
+
+=head2 列表归并
+
+数字求和，也可以用List::Util中的reduce：
+
+    use List::Util qw(reduce);
+
+    my $sum = reduce { $a + $b } 1 .. 1000;
+
+与sort类似，reduce也是用code
+block作为参数，不过运行机制稍微不同。每次迭代，先从参数列表取出前面两个元素，分别设置为别名$a和$b，这样参数列表的长度就会缩短为两个元素。然后reduce把语句块返回的计算结果再压回到参数列表的头部。如此往复，直到最后列表里只剩下一个元素，也就是迭代的计算结果$sum。
+
+好了，可以这样了：
+
+    my $product = reduce { $a * $b } 1 .. 1000;
+
+=head2 判断是否有元素匹配
+
+纯粹用Perl实现，找到列表中第一个符合某条件的元素，比找出所有符合条件的要麻烦一些。下面的例子，判断是否有大于1000的元素：
+
+    my $found_a_match = grep { $_ > 1000 } @list;
+
+注意：如果@list有一亿个元素，而要找的就是1001？grep仍然还会循环一亿次，当然你可以向下面自己控制下：
+    
+    my $found_a_match = 0;
+    foreach my $elem (@list) {
+        $found_a_match = $elem if $elem > 1000;
+        last if $found_a_match;
+    }
+
+还是那句话，不简单~~~List::Util有现成的东西：
+
+    use List::Util qw(first);
+    my $found_a_match = fist { $_ > 1000 } @list;
+
+在List::MoreUtils模块中，也提供很多的实用函数：
+
+    my $found_a_match = any     { $_ > 1000 } @list;
+    my $all_greater   = all     { $_ > 1000 } @list;
+    my $none_greater  = none    { $_ > 1000 } @list;
+    my $all_greater   = notall  { $_ % 2    } @list;
+
+=head2 一次遍历多个列表
+
+一般我们同时遍历多个业务相关的列表时，往往用数组下标遍历：
+
+    my @a = ( ... );
+    my @b = ( ... );
+    my @c;
+
+    foreach my $i ( 0 .. $#list ) {
+        my ( $a, $b ) = ( $a[$i], $b[$i] );
+        push @c, $a + $b;
+    }
+
+看下面这个，你的感觉是？
+
+    use List::MoreUtils qw(pairwise);
+    my @c = pairwise { $a + $b } @a, @b;
+
+pairwise只适合两个列表的同步计算，三个后用each_array：
+
+    use List::MoreUtils qw(each_array);
+
+    my $ea = each_array( @a, @b, @c );
+
+    my @d;
+    while ( my ( $a, $b, $c ) = $ea->() ) {
+        push @d, $a+$b+$c;
+    }
+
+虽然还是有点烦，不过也还好了。
+
+=head2 数组合并
+
+合并多个数组的操作当然你可以自己写，但终究不如MoreUtils的mesh方便：
+
+    use List::MoreUtils qw(mesh);
+
+    my @odds = qw/ 1 3 5 7 9/;
+    my @evens= qw/ 2 4 6 8 0/;
+
+    my @nums = mesh @odds, @evens; # print： 1 2 3 4 ...
+
+=head2 更多函数
+
+更多请看L<http://search.cpan.org/~pevans/Scalar-List-Utils-1.25/lib/List/Util.pm>，L<http://search.cpan.org/~adamk/List-MoreUtils-0.33/lib/List/MoreUtils.pm>，当然perldoc -m
+List::Util，perldoc -m List::MoreUtils 更好不是！
+
+=head2 要点
+
+=over 4
+
+=item * 用List::Util和List::MoreUtils简化列表处理；
+
+=item * 用List::MoreUtils的all、any、none、notall筛选列表；
+
+=item * 用pairwise或each_array完成多个列表的同步处理；
+
+=back
