@@ -1,0 +1,151 @@
+=encoding utf8
+
+=head1 my和local？了解就ok
+
+my和local俩很微妙，功能很想，有区别的场景很少，但确确实实有不一样的运行结果。
+
+看下面前请记住：my和sub没关系，local和sub也没关系啦~~~
+
+=head2 Global variables
+
+在Perl中，什么变量啊、子程序啊、还是其他可以被命名的实体默认都拥有包裹在“包”里。就是讲，他们都被定义到包的符号表中。而这里有个老大
+-- 全局作用域。
+
+大多数情况下，Perl会在编译阶段将全局名称放到包符号表中。那些在Perl编译时没法获知的名称会在执行时插入到符号表中。试试下面这个：
+
+    print join " ", keys %::;
+    $compile_time;  # 编译时创建
+    ${"run_time"};  # 软引用，运行时创建
+
+当我们运行这个程序时，我们会看见Perl在符号表中列出跟踪的所有东西：
+
+    version:: / stderr _<perl.c B<compile_time> , _<mro.c Tie:: utf8:: " re:: CORE:: DynaLoader:: mro::
+    stdout  stdin ARGV INC ENV Regexp:: UNIVERSAL:: $ _<perlio.c main:: _<t.pl _<perlmain.c PerlIO::
+    0 _<universal.c @ STDOUT IO::  _ Exporter:: STDERR Internals:: STDIN DB::
+
+想告诉你的就是：compile_time在 token table
+中出现的位置，要比变量$compile_time在运行时出现的位置早。很好理解这句话 —— 你看到 run_time
+了么？！
+
+You've probably been told since the beginning of your programming carrer (or hobby, or B<however u
+prefer to describe it>) that global variables are bad. Good grograms should not use a lot of global
+variables, because global variables create hidden interfaces, make code difficult to read and
+modify, and even make it hard for compilers to optimize your code.
+
+如果你写过几百行代码的程序，特别是在团队协作的情况下。U should see the need for mechanism to support
+local variables in Perl.
+
+Of course, Perl does support local variables, and in fact is more generous in its support than most
+languages. Most languages gives u only a single mechanism for creating local variables. Perl gives u
+two different mechanism.
+
+=head2 Lexical (compile_time) scoping with my
+
+A variable created with I<my> exists from the point of declaration through the end of the enclosing
+scope. 像一对{}，一个文件，一个eval字符串都是enclosing scope ——
+闭合作用域。闭合作用域指的是词法作用域，仅在编译时对程序源代码扫描过程中确立，直接点就是你看代码就能确定了。
+
+看下面的例子：
+
+    $a = 3.1415926; # global
+    {
+        my $a = 2.7183; # lexical 
+        print $a; # 2.7183
+    }
+    print $a; # 3.1415926
+
+Here, the variable $a in use outside the braces is the global $a. The variable $a inside the braces
+is the lexical $a, which is scoped to those braces.
+
+再看看下面的例子：
+
+    my $compile_time; # a lexical var 
+    $compile_time;
+    print join " ", keys(%::);
+
+看输出：
+
+    version:: / stderr _<perl.c , _<mro.c Tie:: utf8:: " re:: CORE:: DynaLoader:: mro:: stdout
+    stdin ARGV INC ENV Regexp:: UNIVERSAL:: $ _<perlio.c main:: _<t.pl _<perlmain.c PerlIO:: 0
+    _<universal.c @ STDOUT IO::  _ Exporter:: STDERR Internals:: STDIN DB::
+
+compile_time没了！！！！！
+
+好，继续：
+
+    $compile_time; # not a my var 
+    my $compile_time; # but this is a my var 
+    print join " ", keys(%::);
+
+看输出：
+
+    version:: / stderr _<perl.c complie_time , _<mro.c Tie:: utf8:: " re:: CORE:: DynaLoader:: mro::
+    stdout  stdin ARGV INC ENV Regexp:: UNIVERSAL:: $ _<perlio.c main:: _<t.pl _<perlmain.c PerlIO::
+    0 _<universal.c @ STDOUT IO::  _ Exporter:: STDERR Internals:: STDIN DB::
+
+额，又回来了 - -!
+
+这些例子说明了my变量不“存在”于符号表中。在最先前的例子中，只有一个变量被命名为$compile_time，它从未出现在包的符号表中。而刚才的两个例子，有两个独立的变量被命名为$compile_time：一个存在于符号表中的全局变量，一个是不存在于符号表中的my变量。
+
+说真的，我只是抄完了，没理解！那继续抄：
+
+我们总能通过限定名称访问包变量值。限定名称 (包含::符号) 总是指向符号表中的变量，比如：
+
+    # qualified names VS. my variables
+    {
+        my $a = 3.1416;
+        $main::a = 2.7183;
+        print "(inside) a = $a\n";
+        print "(inside) main::a = $main::a\n";
+        print "(inside) ::a = $::a\n"
+    }
+    print "(outside) a = $a\n";
+
+output:
+
+    (inside) a = 3.1416;
+    (inside) main::a = 2.7183
+    (inside) ::a = 2.7183
+    (outside) a = 2.7183
+
+我们能看到$a被限定在{}内了，OMG!!! 本质原因在于my变量不在符号表中，我们没法用上面任何方法访问。
+
+下面是一个软引用的例子：
+
+    # soft references VS. my variables
+    my $a = 3.1415926;
+    ${'a'} = 2.7183;
+    print "my a = $a\n";
+    print "{a} = ${'a'}\n";
+
+就算两个a在同一个作用域也没有关系，因为在软引用中总是用符号表维护变量。看看输出：
+
+    my $a = 3.1415926;
+    {a} = 2.7183;
+
+Typeglobs work the same way. In fact, as this example demonstrates, typeglob, soft references, and
+qualified variable names B<never refer to> lexical (my) variables:
+
+    # typeglobs vs. my variables
+    $a = 2.7183;
+    my $a = 3.1416;
+    *alias = *a;
+    print "my a = $a\n";
+    print "alias = $alias\n";
+    print "{a} = ${'a'}\n";
+    print "::a = $::a\n";
+
+The output shows what Perl thinks $a is at each step:
+
+    my a = 3.1416
+    alias = 2.7183
+    {a} = 2.7183
+    ::a = 2.7183 
+
+看到了没有：*alias这个typeglob指向全局的*a，尽管typeglob的赋值在my
+$a之后。实际上，这和赋值操作的先后没有任何关系，在哪都一样 —— 因为Perl语言设计的就是 ——
+typeglob永远指向符号表中的东西，而my变量则不会出现在其中。
+
+=head2 Run time scoping with local 
+
+
