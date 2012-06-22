@@ -1,0 +1,49 @@
+=encoding utf8
+
+=head1 django.contrib.admin.forms.py
+
+=head2 什么
+
+这是py是admin模块自己定制的Form，关键在下面的模块：
+
+	from django import forms
+
+	from django.contrib.auth import authenticate
+	from django.contrib.auth.forms import AuthenticationForm
+	from django.contrib.auth.models import User
+	from django.utils.translation import ugettext_lazy, ugettext as _
+
+然后admin为自己定制了AdminAuthenticationForm这个Form。注释为：A custom authentication form used in the admin app.
+
+=head2 源码
+
+	class AdminAuthenticationForm(AuthenticationForm):
+		this_is_the_login_form = forms.BooleanField(widget=form.HiddenInput, initial=1,error_messages={'required':ugettext_lazy("Please log in again, because ur session has expired.")})
+
+		def clean(self):
+			...
+	        if username and password:
+                self.user_cache = authenticate(username=username, password=password)
+                if self.user_cache is None:
+                    if '@' in username:
+                        try:
+                            user = User.objects.get(email=username)
+                        except (User.DoesNotExist,User.MultipleObjectsReturned):
+                            pass 
+                        else:
+                            if user.check_password(password):
+                                message = _(...)
+                    raise forms.ValidationError(message)
+                elif not self.user_cache.is_active or not self.user_cache.is_staff:
+                    raise forms.ValidationError(message)
+            self.check_for_test_cookie()
+            return self.cleaned_data
+
+=head2 有什么东西，怎么去用它
+
+
+
+
+
+
+
