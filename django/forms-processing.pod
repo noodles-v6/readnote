@@ -1,0 +1,49 @@
+=encoding utf8
+
+=head1 Django中的表单玩法
+
+发送一个请求，根据urls路由到对应的函数，在函数里面封装一个form表单对象，该表单
+类是根据业务设计的，其中有一系列的方法，比如form.is_valid()，该表单有点J2EE中
+HttpRequest类，从这个类中，你能取得页面传来的参数，由于django中的表单是用户自定义
+的，故表单类里可以有业务的部分逻辑。
+
+=head2 简单玩法
+
+在urls对应的函数中封装好form后，做is_valid验证，如果ok，则走自己的业务逻辑，比如，
+直接HttpResponseRedirect到一个新页面；如果fail，把当前表单当做数据，返回到之前的
+页面。
+
+    <form action="/contact/" method="post">{% csrf_token %} 
+        {{ form.as_p }}
+        <input type="submit" value="Submit" />
+    </form>
+
+你可以用上面的页面表示contact页面，不过，这个form到底用的是哪个Form类呢？之所以有
+这个疑问，原因在于：当你在浏览器地址栏或是其他页面链接访问 ^contact/$ 时，逻辑首先
+还是走到urls中对应的函数中，比如下面：
+
+    def contact(request):
+        if request.method == ’POST’: # If the form has been submitted...
+            form = ContactForm(request.POST) # A form bound to the POST data 
+			if form.is_valid(): # All validation rules pass
+            	# Process the data in form.cleaned_data
+            	# ...
+            	return HttpResponseRedirect(’/thanks/’) # Redirect after POST
+        else:
+            form = ContactForm() # An unbound form 
+            
+        return render_to_response(’contact.html’, { ’form’: form,})
+
+这里有个else创建了一个空的ContactForm，这个就是对刚上来的请求，或者说是没有提交的
+请求。而对提交的请求会走另外的逻辑。
+
+理一下：
+
+	1. 如果表单未被提交，new一个空表单，然后Django用这个表单去render页面模板；
+	2. 如果用户点了提交表单，则走进request.method == 'POST'里，处理提交数据，做redirect；
+
+好了，这下哥自己算是理解了。ok，next！
+
+=head2 页面模板还可以这样
+
+

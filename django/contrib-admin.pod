@@ -1,0 +1,27 @@
+=encoding utf8
+
+=head1 简要分析Django的Admin是如何工作的
+
+=head2 看入口
+
+当我们 django-admin.py startproject xxx 后，在urls.py中就有了admin的url配置，该url的
+处理对应sites.py文件中的site全局变量，该变量是一个自定义的AdminSite，有get_urls方法，
+这个方法里有做了url路由了。
+
+	url(r'^admin/', include(admin.site.urls)),
+
+	# This global object represents the default admin site, for the common case.
+	# You can instantiate AdminSite in your own code to create a custom admin site.
+	site = AdminSite()
+
+	def get_urls(self):
+		...
+		# Admin-site-wide views.
+        urlpatterns = patterns('',
+		...
+
+	@property
+    def urls(self):
+ 	   return self.get_urls(), self.app_name, self.name
+
+这样，admin入口就找到了:)

@@ -1,0 +1,22 @@
+=encoding utf8
+
+=head1 django.contrib.admin.helpers.py
+
+=head2 干嘛用的
+
+该py中有很多admin中需要的基础类，有些是object来的，有些是django类来的。
+
+=head2 看看有哪些
+
+    ActionForm(forms.Form)
+    AdminForm(object)
+    Fieldset(object)
+    Fieldline(object)
+    AdminField(object)
+    AdminReadonlyField(object)
+    InlineAdminFormSet(object)
+    InlineAdminForm(AdminForm)
+    InlineFieldset(FieldSet)
+    AdminErrorList(forms.util.ErrorList)
+
+=head2 

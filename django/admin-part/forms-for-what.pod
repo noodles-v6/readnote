@@ -6,23 +6,23 @@
 
 这是py是admin模块自己定制的Form，关键在下面的模块：
 
-	from django import forms
+    from django import forms
 
-	from django.contrib.auth import authenticate
-	from django.contrib.auth.forms import AuthenticationForm
-	from django.contrib.auth.models import User
-	from django.utils.translation import ugettext_lazy, ugettext as _
+    from django.contrib.auth import authenticate
+    from django.contrib.auth.forms import AuthenticationForm
+    from django.contrib.auth.models import User
+    from django.utils.translation import ugettext_lazy, ugettext as _
 
 然后admin为自己定制了AdminAuthenticationForm这个Form。注释为：A custom authentication form used in the admin app.
 
 =head2 源码
 
-	class AdminAuthenticationForm(AuthenticationForm):
-		this_is_the_login_form = forms.BooleanField(widget=form.HiddenInput, initial=1,error_messages={'required':ugettext_lazy("Please log in again, because ur session has expired.")})
+    class AdminAuthenticationForm(AuthenticationForm):
+        this_is_the_login_form = forms.BooleanField(widget=form.HiddenInput, initial=1,error_messages={'required':ugettext_lazy("Please log in again, because ur session has expired.")})
 
-		def clean(self):
-			...
-	        if username and password:
+        def clean(self):
+            ...
+            if username and password:
                 self.user_cache = authenticate(username=username, password=password)
                 if self.user_cache is None:
                     if '@' in username:
