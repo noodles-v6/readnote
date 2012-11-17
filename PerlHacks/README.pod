@@ -1,0 +1,5 @@
+=encoding utf8
+
+Perl Hacks: Tips & Tools for Programming, Debugging, and Surviving
+
+(Note & Sample Code)
