@@ -1,0 +1,9 @@
+do{ my $x = {
+       'config_data' => {
+                          'eye_color' => 'black',
+                          'name' => 'noodles',
+                          'rating' => '10'
+                        },
+       'config_module' => 'User::IrisScan::Config'
+     };
+$x; }
