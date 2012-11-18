@@ -1,3 +1,5 @@
 =encoding utf8
 
 Chapter 2. User Interaction
+
+sample1 ~ sample7 => IO::Prompt
